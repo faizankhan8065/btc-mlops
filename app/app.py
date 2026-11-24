@@ -28,7 +28,7 @@ log = logging.getLogger("btc-api")
 MAX_FORECAST_DAYS = 30
 START_TIME = time.time()
 _lock = threading.Lock()
-_state = {"artifact": None, "loaded_at": None, "error": None}
+_state = {"artifact": None, "loaded_at": None, "error": None, "mtime": None}
 
 
 def model_path() -> str:
@@ -38,10 +38,11 @@ def model_path() -> str:
 def load_model() -> bool:
     path = model_path()
     try:
+        mtime = os.path.getmtime(path)
         with open(path, "rb") as fh:
             artifact = pickle.load(fh)
         with _lock:
-            _state.update(artifact=artifact, loaded_at=datetime.now(timezone.utc).isoformat(), error=None)
+            _state.update(artifact=artifact, loaded_at=datetime.now(timezone.utc).isoformat(), error=None, mtime=mtime)
         log.info("Loaded model %s from %s", artifact["version"], path)
         return True
     except Exception as exc:  # noqa: BLE001
@@ -51,9 +52,21 @@ def load_model() -> bool:
         return False
 
 
+def reload_if_changed() -> None:
+    """Gunicorn runs several worker processes and POST /reload reaches only one of them,
+    so every worker also checks the model file's mtime and reloads when it changes."""
+    try:
+        mtime = os.path.getmtime(model_path())
+    except OSError:
+        return
+    if mtime != _state["mtime"]:
+        load_model()
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
     load_model()
+    app.before_request(reload_if_changed)
 
     def error(status: int, message: str):
         return jsonify({"status": "error", "code": status, "message": message}), status

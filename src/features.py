@@ -24,7 +24,7 @@ def clean_prices(df: pd.DataFrame) -> pd.DataFrame:
     """Sort by date, drop duplicates / non-positive prices, forward-fill gaps."""
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None).dt.normalize()
-    df = df.drop_duplicates("date").sort_values("date").set_index("date")
+    df = df.sort_values("date").drop_duplicates("date", keep="last").set_index("date")
     full_index = pd.date_range(df.index.min(), df.index.max(), freq="D")
     df = df.reindex(full_index).ffill()
     df.index.name = "date"

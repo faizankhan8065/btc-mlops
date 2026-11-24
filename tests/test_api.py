@@ -72,3 +72,15 @@ def test_reload_requires_key(client):
 def test_unknown_endpoint_and_method(client):
     assert client.get("/nope").status_code == 404
     assert client.get("/predict").status_code == 405
+
+
+def test_auto_reload_when_model_file_changes(client, model_dir):
+    import os
+    import time
+
+    v1 = client.get("/health").get_json()["model_loaded_at"]
+    path = os.path.join(model_dir, "model.pkl")
+    later = time.time() + 5
+    os.utime(path, (later, later))  # simulate the pipeline writing a new model
+    v2 = client.get("/health").get_json()["model_loaded_at"]
+    assert v2 != v1
