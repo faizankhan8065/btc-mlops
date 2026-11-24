@@ -1,0 +1,79 @@
+2026-11-24 14:14:04,017 ERROR yfinance: Failed to get ticker 'BTC-USD' reason: HTTPSConnectionPool(host='fc.yahoo.com', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden (agent proxy: no rule or network setting allows this host)')))
+2026-11-24 14:14:04,062 ERROR yfinance: 
+1 Failed download:
+2026-11-24 14:14:04,063 ERROR yfinance: ['BTC-USD']: ProxyError(MaxRetryError("HTTPSConnectionPool(host='fc.yahoo.com', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden (agent proxy: no rule or network setting allows this host)')))"))
+2026-11-24 14:14:04,063 WARNING etl_fetch: Source yfinance failed: yfinance returned no data
+2026-11-24 14:14:04,081 WARNING etl_fetch: Source coingecko failed: HTTPSConnectionPool(host='api.coingecko.com', port=443): Max retries exceeded with url: /api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden (agent proxy: no rule or network setting allows this host)')))
+2026-11-24 14:14:04,082 WARNING etl_fetch: All live sources failed -- using SYNTHETIC data (offline mode)
+2026-11-24 14:14:04,093 INFO etl_fetch: Saved 1500 rows (synthetic) to data/raw/btc_usd.csv
+2026-11-24 14:14:04,669 INFO preprocess: Processed 1500 rows -> data/processed/btc_features.csv
+2026-11-24 14:14:06,559 INFO train_forecast: Validation metrics: {'mae': 3890.726582988192, 'rmse': 4219.982474890972, 'mape': 9.578856674073526} | naive baseline: {'mae': 2959.303876941211, 'rmse': 3143.14037335182, 'mape': 7.277346430868679}
+2026-11-24 14:14:07,591 INFO train_forecast: Model v20261124141407 REGISTERED (MAPE 9.58% <= 10.00%)
+{
+  "model_version": "v20261124141407",
+  "model_type": "GradientBoostingRegressor (recursive 7-day)",
+  "data_source": "synthetic",
+  "trained_at": "2026-11-24T14:14:07.584543+00:00",
+  "train_rows": 1469,
+  "last_date": "2026-11-24",
+  "metrics": {
+    "mae": 3890.726582988192,
+    "rmse": 4219.982474890972,
+    "mape": 9.578856674073526
+  },
+  "baseline_naive_metrics": {
+    "mae": 2959.303876941211,
+    "rmse": 3143.14037335182,
+    "mape": 7.277346430868679
+  },
+  "mape_threshold": 10.0,
+  "passed_threshold": true
+}
+--- full models/metrics.json ---
+{
+  "model_version": "v20261124141407",
+  "model_type": "GradientBoostingRegressor (recursive 7-day)",
+  "data_source": "synthetic",
+  "trained_at": "2026-11-24T14:14:07.584543+00:00",
+  "train_rows": 1469,
+  "last_date": "2026-11-24",
+  "validation_window": [
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-23",
+    "2026-11-24"
+  ],
+  "validation_actual": [
+    42667.49,
+    42251.03,
+    40907.33,
+    41338.45,
+    39968.46,
+    40864.01,
+    39472.55
+  ],
+  "validation_predicted": [
+    44249.48,
+    44288.99,
+    44339.03,
+    44858.06,
+    45079.87,
+    45939.55,
+    45949.42
+  ],
+  "metrics": {
+    "mae": 3890.726582988192,
+    "rmse": 4219.982474890972,
+    "mape": 9.578856674073526
+  },
+  "baseline_naive_metrics": {
+    "mae": 2959.303876941211,
+    "rmse": 3143.14037335182,
+    "mape": 7.277346430868679
+  },
+  "mape_threshold": 10.0,
+  "passed_threshold": true
+}

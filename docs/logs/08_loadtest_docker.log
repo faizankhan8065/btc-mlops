@@ -1,0 +1,12 @@
+url=http://localhost:5000/predict concurrency=1 duration=15.0s
+requests=698 errors=0 throughput=46.5 req/s
+latency ms: mean=21.5 p50=20.4 p95=28.1 p99=36.9
+
+url=http://localhost:5000/predict concurrency=4 duration=15.0s
+requests=1046 errors=0 throughput=69.7 req/s
+latency ms: mean=57.4 p50=58.3 p95=113.3 p99=133.1
+
+url=http://localhost:5000/predict concurrency=8 duration=15.0s
+requests=956 errors=0 throughput=63.7 req/s
+latency ms: mean=126.0 p50=127.2 p95=222.7 p99=250.7
+

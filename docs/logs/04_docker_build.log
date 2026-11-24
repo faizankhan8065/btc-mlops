@@ -1,0 +1,65 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.76kB done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.3s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
+#3 resolve docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/python:3.10-slim
+#4 DONE 0.3s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 138B done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 803.77kB 0.0s done
+#6 DONE 0.0s
+
+#7 [builder 1/4] FROM docker.io/library/python:3.10-slim@sha256:6ff506466f8b1e981719b468cc0023b8ef000b983cdec0eafe119d01f379e31d
+#7 resolve docker.io/library/python:3.10-slim@sha256:6ff506466f8b1e981719b468cc0023b8ef000b983cdec0eafe119d01f379e31d 0.0s done
+#7 DONE 0.0s
+
+#8 [runtime 5/7] COPY --chown=app:app src/__init__.py src/features.py ./src/
+#8 CACHED
+
+#9 [builder 3/4] COPY app/requirements.txt .
+#9 CACHED
+
+#10 [builder 4/4] RUN --mount=type=secret,id=ca,required=false     if [ -f /run/secrets/ca ]; then export PIP_CERT=/run/secrets/ca; fi;     pip wheel --wheel-dir /wheels -r requirements.txt
+#10 CACHED
+
+#11 [runtime 3/7] COPY --from=builder /wheels /wheels
+#11 CACHED
+
+#12 [runtime 4/7] RUN pip install --no-index --find-links=/wheels /wheels/* && rm -rf /wheels     && groupadd --system --gid 10001 app     && useradd --system --uid 10001 --gid app --no-create-home app
+#12 CACHED
+
+#13 [runtime 2/7] WORKDIR /app
+#13 CACHED
+
+#14 [builder 2/4] WORKDIR /build
+#14 CACHED
+
+#15 [runtime 6/7] COPY --chown=app:app app/app.py app/gunicorn.conf.py ./
+#15 CACHED
+
+#16 [runtime 7/7] COPY --chown=app:app models/ ./models/
+#16 DONE 0.0s
+
+#17 exporting to image
+#17 exporting layers 0.0s done
+#17 exporting manifest sha256:33d2eef0432c5b8e46a596f1145ee80ab89a60c9a8f7318a7b493727947151e2 done
+#17 exporting config sha256:af6d430fe65c575a4b588c3ef5b185dbe5a1e16cd4decb01649417dcc69a2ccd done
+#17 exporting attestation manifest sha256:2e89483f25491e969972e93f8b360d3185bf0f755fed0702f1f01fc3b84b6092
+#17 exporting attestation manifest sha256:2e89483f25491e969972e93f8b360d3185bf0f755fed0702f1f01fc3b84b6092 done
+#17 exporting manifest list sha256:ea192cf6edfa9baa2677e1807c5958418021911132e3f20b6864d3799e585ce1 done
+#17 naming to docker.io/library/btc-forecast-api:latest done
+#17 unpacking to docker.io/library/btc-forecast-api:latest 0.0s done
+#17 DONE 0.1s

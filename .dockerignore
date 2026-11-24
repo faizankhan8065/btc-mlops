@@ -1,0 +1,13 @@
+.git
+.github
+**/__pycache__
+**/*.pyc
+data/
+tests/
+docs/
+loadtest/
+dags/
+kubeflow/
+k8s/
+logs/
+*.md

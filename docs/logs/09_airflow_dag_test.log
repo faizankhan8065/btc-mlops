@@ -1,0 +1,133 @@
+
+$ airflow dags list
+dag_id           | fileloc                               | owners | is_paused
+=================+=======================================+========+==========
+btc_etl_pipeline | /opt/airflow/dags/btc_etl_pipeline.py | mlops  | None     
+                                                                             
+
+$ airflow tasks list btc_etl_pipeline --tree
+<Task(PythonOperator): fetch_data>
+    <Task(PythonOperator): preprocess_features>
+        <Task(PythonOperator): train_and_evaluate>
+            <Task(ShortCircuitOperator): check_threshold>
+                <Task(PythonOperator): reload_api_model>
+
+$ airflow dags test btc_etl_pipeline 2026-11-24
+[2026-11-24T14:35:06.175+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags
+[2026-11-24T14:35:06.217+0000] {dag.py:4199} INFO - dagrun id: btc_etl_pipeline
+[2026-11-24T14:35:06.225+0000] {dag.py:4215} INFO - created dagrun <DagRun btc_etl_pipeline @ 2026-11-24 00:00:00+00:00: manual__2026-11-24T00:00:00+00:00, state:running, queued_at: None. externally triggered: False>
+[2026-11-24T14:35:06.248+0000] {dag.py:4161} INFO - [DAG TEST] starting task_id=fetch_data map_index=-1
+[2026-11-24T14:35:06.248+0000] {dag.py:4164} INFO - [DAG TEST] running task <TaskInstance: btc_etl_pipeline.fetch_data manual__2026-11-24T00:00:00+00:00 [scheduled]>
+[2026-11-24 14:35:06,673] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='fetch_data' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:06.673+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='fetch_data' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:06.676+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-11-24T14:35:07.399+0000] {etl_fetch.py:79} WARNING - Source yfinance failed: No module named 'yfinance'
+[2026-11-24T14:35:07.401+0000] {etl_fetch.py:79} WARNING - Source coingecko failed: HTTPSConnectionPool(host='api.coingecko.com', port=443): Max retries exceeded with url: /api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7ff61df73790>: Failed to resolve 'api.coingecko.com' ([Errno -2] Name or service not known)"))
+[2026-11-24T14:35:07.402+0000] {etl_fetch.py:81} WARNING - All live sources failed -- using SYNTHETIC data (offline mode)
+[2026-11-24T14:35:07.414+0000] {etl_fetch.py:93} INFO - Saved 1500 rows (synthetic) to /opt/project/data/raw/btc_usd.csv
+[2026-11-24 14:35:07,414] {python.py:237} INFO - Done. Returned value was: /opt/project/data/raw/btc_usd.csv
+[2026-11-24T14:35:07.414+0000] {python.py:237} INFO - Done. Returned value was: /opt/project/data/raw/btc_usd.csv
+[2026-11-24T14:35:07.414+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-11-24T14:35:07.424+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=fetch_data, run_id=manual__2026-11-24T00:00:00+00:00, execution_date=20261124T000000, start_date=, end_date=20261124T143507
+[2026-11-24T14:35:07.429+0000] {dag.py:4175} INFO - [DAG TEST] end task task_id=fetch_data map_index=-1
+[2026-11-24T14:35:07.438+0000] {dag.py:4161} INFO - [DAG TEST] starting task_id=preprocess_features map_index=-1
+[2026-11-24T14:35:07.438+0000] {dag.py:4164} INFO - [DAG TEST] running task <TaskInstance: btc_etl_pipeline.preprocess_features manual__2026-11-24T00:00:00+00:00 [scheduled]>
+[2026-11-24 14:35:07,453] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='preprocess_features' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:07.453+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='preprocess_features' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:07.454+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-11-24T14:35:07.475+0000] {preprocess.py:24} INFO - Processed 1500 rows -> /opt/project/data/processed/btc_features.csv
+[2026-11-24 14:35:07,475] {python.py:237} INFO - Done. Returned value was: /opt/project/data/processed/btc_features.csv
+[2026-11-24T14:35:07.475+0000] {python.py:237} INFO - Done. Returned value was: /opt/project/data/processed/btc_features.csv
+[2026-11-24T14:35:07.475+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-11-24T14:35:07.481+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=preprocess_features, run_id=manual__2026-11-24T00:00:00+00:00, execution_date=20261124T000000, start_date=, end_date=20261124T143507
+[2026-11-24T14:35:07.484+0000] {dag.py:4175} INFO - [DAG TEST] end task task_id=preprocess_features map_index=-1
+[2026-11-24T14:35:07.493+0000] {dag.py:4161} INFO - [DAG TEST] starting task_id=train_and_evaluate map_index=-1
+[2026-11-24T14:35:07.493+0000] {dag.py:4164} INFO - [DAG TEST] running task <TaskInstance: btc_etl_pipeline.train_and_evaluate manual__2026-11-24T00:00:00+00:00 [scheduled]>
+[2026-11-24 14:35:07,507] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='train_and_evaluate' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:07.507+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='train_and_evaluate' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:07.507+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-11-24T14:35:08.969+0000] {train_forecast.py:57} INFO - Validation metrics: {'mae': 3890.726582988192, 'rmse': 4219.982474890972, 'mape': 9.578856674073526} | naive baseline: {'mae': 2959.303876941211, 'rmse': 3143.14037335182, 'mape': 7.277346430868679}
+[2026-11-24T14:35:10.020+0000] {train_forecast.py:103} INFO - Model v20261124143510 REGISTERED (MAPE 9.58% <= 10.00%)
+[2026-11-24T14:35:10.021+0000] {btc_etl_pipeline.py:54} INFO - Training report: {
+  "model_version": "v20261124143510",
+  "model_type": "GradientBoostingRegressor (recursive 7-day)",
+  "data_source": "unknown",
+  "trained_at": "2026-11-24T14:35:10.013085+00:00",
+  "train_rows": 1469,
+  "last_date": "2026-11-24",
+  "validation_window": [
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-23",
+    "2026-11-24"
+  ],
+  "validation_actual": [
+    42667.49,
+    42251.03,
+    40907.33,
+    41338.45,
+    39968.46,
+    40864.01,
+    39472.55
+  ],
+  "validation_predicted": [
+    44249.48,
+    44288.99,
+    44339.03,
+    44858.06,
+    45079.87,
+    45939.55,
+    45949.42
+  ],
+  "metrics": {
+    "mae": 3890.726582988192,
+    "rmse": 4219.982474890972,
+    "mape": 9.578856674073526
+  },
+  "baseline_naive_metrics": {
+    "mae": 2959.303876941211,
+    "rmse": 3143.14037335182,
+    "mape": 7.277346430868679
+  },
+  "mape_threshold": 10.0,
+  "passed_threshold": true
+}
+[2026-11-24 14:35:10,030] {python.py:237} INFO - Done. Returned value was: True
+[2026-11-24T14:35:10.030+0000] {python.py:237} INFO - Done. Returned value was: True
+[2026-11-24T14:35:10.031+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-11-24T14:35:10.038+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=train_and_evaluate, run_id=manual__2026-11-24T00:00:00+00:00, execution_date=20261124T000000, start_date=, end_date=20261124T143510
+[2026-11-24T14:35:10.043+0000] {dag.py:4175} INFO - [DAG TEST] end task task_id=train_and_evaluate map_index=-1
+[2026-11-24T14:35:10.051+0000] {dag.py:4161} INFO - [DAG TEST] starting task_id=check_threshold map_index=-1
+[2026-11-24T14:35:10.051+0000] {dag.py:4164} INFO - [DAG TEST] running task <TaskInstance: btc_etl_pipeline.check_threshold manual__2026-11-24T00:00:00+00:00 [scheduled]>
+[2026-11-24 14:35:10,066] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='check_threshold' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:10.066+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='check_threshold' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:10.066+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-11-24 14:35:10,067] {baseoperator.py:400} WARNING - ShortCircuitOperator.execute cannot be called outside TaskInstance!
+[2026-11-24T14:35:10.067+0000] {baseoperator.py:400} WARNING - ShortCircuitOperator.execute cannot be called outside TaskInstance!
+[2026-11-24T14:35:10.070+0000] {btc_etl_pipeline.py:62} INFO - Model passed threshold: True
+[2026-11-24 14:35:10,070] {python.py:237} INFO - Done. Returned value was: True
+[2026-11-24T14:35:10.070+0000] {python.py:237} INFO - Done. Returned value was: True
+[2026-11-24 14:35:10,070] {python.py:304} INFO - Condition result is True
+[2026-11-24T14:35:10.070+0000] {python.py:304} INFO - Condition result is True
+[2026-11-24 14:35:10,070] {python.py:307} INFO - Proceeding with downstream tasks...
+[2026-11-24T14:35:10.070+0000] {python.py:307} INFO - Proceeding with downstream tasks...
+[2026-11-24T14:35:10.070+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-11-24T14:35:10.076+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=check_threshold, run_id=manual__2026-11-24T00:00:00+00:00, execution_date=20261124T000000, start_date=, end_date=20261124T143510
+[2026-11-24T14:35:10.080+0000] {dag.py:4175} INFO - [DAG TEST] end task task_id=check_threshold map_index=-1
+[2026-11-24T14:35:10.087+0000] {dag.py:4161} INFO - [DAG TEST] starting task_id=reload_api_model map_index=-1
+[2026-11-24T14:35:10.088+0000] {dag.py:4164} INFO - [DAG TEST] running task <TaskInstance: btc_etl_pipeline.reload_api_model manual__2026-11-24T00:00:00+00:00 [scheduled]>
+[2026-11-24 14:35:10,102] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='reload_api_model' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:10.102+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='mlops' AIRFLOW_CTX_DAG_ID='btc_etl_pipeline' AIRFLOW_CTX_TASK_ID='reload_api_model' AIRFLOW_CTX_EXECUTION_DATE='2026-11-24T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-11-24T00:00:00+00:00'
+[2026-11-24T14:35:10.102+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-11-24T14:35:10.112+0000] {btc_etl_pipeline.py:75} INFO - API now serving v20261124143510 (expected v20261124143510)
+[2026-11-24T14:35:10.136+0000] {btc_etl_pipeline.py:77} INFO - Fresh 7-day forecast: [{"date": "2026-11-25", "predicted_close": 39197.75}, {"date": "2026-11-26", "predicted_close": 39531.75}, {"date": "2026-11-27", "predicted_close": 39513.82}, {"date": "2026-11-28", "predicted_close": 39746.41}, {"date": "2026-11-29", "predicted_close": 39737.08}, {"date": "2026-11-30", "predicted_close": 39870.84}, {"date": "2026-12-01", "predicted_close": 40429.66}]
+[2026-11-24 14:35:10,136] {python.py:237} INFO - Done. Returned value was: None
+[2026-11-24T14:35:10.136+0000] {python.py:237} INFO - Done. Returned value was: None
+[2026-11-24T14:35:10.136+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-11-24T14:35:10.138+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=reload_api_model, run_id=manual__2026-11-24T00:00:00+00:00, execution_date=20261124T000000, start_date=, end_date=20261124T143510
+[2026-11-24T14:35:10.143+0000] {dag.py:4175} INFO - [DAG TEST] end task task_id=reload_api_model map_index=-1
+[2026-11-24T14:35:10.145+0000] {dagrun.py:850} INFO - Marking run <DagRun btc_etl_pipeline @ 2026-11-24 00:00:00+00:00: manual__2026-11-24T00:00:00+00:00, state:running, queued_at: None. externally triggered: False> successful
+[2026-11-24T14:35:10.145+0000] {dagrun.py:901} INFO - DagRun Finished: dag_id=btc_etl_pipeline, execution_date=2026-11-24 00:00:00+00:00, run_id=manual__2026-11-24T00:00:00+00:00, run_start_date=2026-11-24 00:00:00+00:00, run_end_date=2026-11-24 14:35:10.145774+00:00, run_duration=52510.145774, state=success, external_trigger=False, run_type=manual, data_interval_start=2026-11-23 00:00:00+00:00, data_interval_end=2026-11-24 00:00:00+00:00, dag_hash=None

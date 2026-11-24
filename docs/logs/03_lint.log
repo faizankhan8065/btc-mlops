@@ -1,0 +1,5 @@
+$ flake8 app src tests dags kubeflow
+flake8: 0 issues
+$ black --check app src tests kubeflow dags
+All done! ✨ 🍰 ✨
+13 files would be left unchanged.

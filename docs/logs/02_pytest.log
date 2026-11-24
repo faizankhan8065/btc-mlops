@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /root/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/user/btc-mlops
+configfile: setup.cfg
+testpaths: tests
+plugins: platformdirs-4.14.8
+collecting ... collected 14 items
+
+tests/test_api.py::test_health PASSED                                    [  7%]
+tests/test_api.py::test_predict_default_7_days PASSED                    [ 14%]
+tests/test_api.py::test_predict_no_body PASSED                           [ 21%]
+tests/test_api.py::test_predict_custom_days_and_history PASSED           [ 28%]
+tests/test_api.py::test_predict_invalid_days PASSED                      [ 35%]
+tests/test_api.py::test_predict_invalid_history PASSED                   [ 42%]
+tests/test_api.py::test_predict_malformed_json PASSED                    [ 50%]
+tests/test_api.py::test_metrics PASSED                                   [ 57%]
+tests/test_api.py::test_reload_requires_key PASSED                       [ 64%]
+tests/test_api.py::test_unknown_endpoint_and_method PASSED               [ 71%]
+tests/test_pipeline.py::test_features_have_no_lookahead PASSED           [ 78%]
+tests/test_pipeline.py::test_metrics_values PASSED                       [ 85%]
+tests/test_pipeline.py::test_training_artifacts PASSED                   [ 92%]
+tests/test_pipeline.py::test_recursive_forecast_rejects_short_history PASSED [100%]
+
+============================== 14 passed in 1.38s ==============================

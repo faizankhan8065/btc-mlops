@@ -1,0 +1,10 @@
+# Image used by Airflow tasks and Kubeflow components (ETL + training).
+FROM python:3.10-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /opt/pipeline
+COPY requirements-train.txt .
+RUN pip install -r requirements-train.txt \
+    && useradd --system --uid 10001 pipeline
+COPY src/ ./src/
+USER 10001
+ENTRYPOINT ["python", "-m"]

@@ -1,0 +1,24 @@
+$ docker exec btc-api id
+uid=10001(app) gid=10001(app) groups=10001(app)
+$ curl -s localhost:5000/health
+{"model_loaded":true,"model_loaded_at":"2026-11-24T14:15:37.349404+00:00","model_stage":"production","model_version":"v20261124141407","pod":"d1401987bdea","status":"ok","uptime_seconds":1266.68}
+$ curl -s -X POST localhost:5000/predict -H 'Content-Type: application/json' -d '{"forecast_days": 7}'
+{"forecast_days":7,"input":"stored_history","last_observed_close":39472.55,"model_version":"v20261124141407","predictions":[{"date":"2026-11-25","predicted_close":39197.75},
+  {"date":"2026-11-26","predicted_close":39531.75},
+  {"date":"2026-11-27","predicted_close":39513.82},
+  {"date":"2026-11-28","predicted_close":39746.41},
+  {"date":"2026-11-29","predicted_close":39737.08},
+  {"date":"2026-11-30","predicted_close":39870.84},
+  {"date":"2026-12-01","predicted_close":40429.66}],"status":"ok"}
+$ curl -s localhost:5000/metrics
+{"model_version": "v20261124141407", "metrics": {"mae": 3890.726582988192, "mape": 9.578856674073526, "rmse": 4219.982474890972}, "baseline_naive_metrics": {"mae": 2959.303876941211, "mape": 7.277346430868679, "rmse": 3143.14037335182}, "data_source": "synthetic"}
+$ curl ... -d '{"forecast_days": 0}'     -> {"code":400,"message":"forecast_days must be an integer between 1 and 30","status":"error"}
+ HTTP 400
+$ curl ... -d '{bad json'                -> {"code":400,"message":"request body is not valid JSON","status":"error"}
+ HTTP 400
+$ curl ... -d '{"history": [1,2,3]}'    -> {"code":400,"message":"history must be a list of at least 31 closing prices","status":"error"}
+ HTTP 400
+$ curl -X POST /reload (no key)          -> {"code":401,"message":"invalid or missing X-API-Key","status":"error"}
+ HTTP 401
+$ curl -X POST /reload -H 'X-API-Key: …' -> {"model_version":"v20261124143510","status":"reloaded"}
+ HTTP 200
