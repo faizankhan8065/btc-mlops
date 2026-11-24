@@ -11,8 +11,8 @@ run minikube start --cpus=4 --memory=6g
 run minikube addons enable metrics-server
 run minikube addons enable ingress
 # Build the image directly inside Minikube's Docker so no registry pull is needed
-eval "$(minikube docker-env --shell bash)"
 run docker build -f app/Dockerfile -t btc-forecast-api:latest .
+run minikube image load btc-forecast-api:latest
 
 LOG=02_apply.log
 run kubectl apply -f k8s/namespace.yaml
