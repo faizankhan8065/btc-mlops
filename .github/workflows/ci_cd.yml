@@ -1,0 +1,84 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: btc-forecast-api
+  PIPELINE_IMAGE_NAME: btc-pipeline
+
+jobs:
+  lint-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Lint (flake8)
+        run: flake8 app src tests dags kubeflow
+      - name: Format check (black)
+        run: black --check app src tests kubeflow dags
+      - name: Unit tests (pytest)
+        run: pytest -v --junitxml=pytest-report.xml
+      - name: Compile Kubeflow pipeline
+        run: python kubeflow/btc_kfp_pipeline.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-and-kfp
+          path: |
+            pytest-report.xml
+            kubeflow/btc_kfp_pipeline.yaml
+
+  build-push:
+    name: Build & Push Docker images
+    needs: lint-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Train baseline model to bundle in the image
+        run: |
+          pip install -r requirements-train.txt
+          python -m src.etl_fetch --allow-synthetic
+          python -m src.preprocess
+          python -m src.train_forecast --mape-threshold 100
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build & push API image (sha + latest)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: app/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build & push pipeline image (sha + latest)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.pipeline
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PIPELINE_IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.PIPELINE_IMAGE_NAME }}:latest

@@ -1,0 +1,7 @@
+-r app/requirements.txt
+yfinance>=0.2.54
+requests==2.32.3
+pytest==8.3.2
+flake8==7.1.1
+black==24.8.0
+kfp>=2.7,<3

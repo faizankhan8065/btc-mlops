@@ -1,0 +1,8 @@
+body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:10pt;line-height:1.38;color:#1a1a1a;max-width:none;margin:0}
+h1.title{font-size:17pt;margin:0 0 2px}p.subtitle{margin:0 0 8px;color:#555}
+h2{font-size:12.5pt;border-bottom:1.5px solid #2b4c7e;color:#2b4c7e;margin:14px 0 6px;padding-bottom:2px}
+pre{background:#f6f8fa;border:1px solid #ddd;border-radius:4px;padding:6px 8px;font-size:7.4pt;line-height:1.25;white-space:pre-wrap;word-break:break-all}
+code{font-size:8.6pt}table{border-collapse:collapse;width:100%;font-size:9pt;margin:6px 0}
+td,th{border:1px solid #ccc;padding:3px 6px;vertical-align:top}th{background:#eef2f8}
+blockquote{border-left:3px solid #e0a100;background:#fffaf0;margin:8px 0;padding:4px 10px;font-size:9pt}
+.arch svg{width:100%;height:auto}em{color:#a33}header{margin-bottom:6px}

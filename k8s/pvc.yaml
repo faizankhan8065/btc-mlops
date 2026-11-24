@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: btc-models-pvc
+  namespace: btc-mlops
+spec:
+  accessModes: ["ReadWriteOnce"]   # single-node Minikube/Kind; use ReadWriteMany on multi-node clusters
+  resources:
+    requests:
+      storage: 1Gi

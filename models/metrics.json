@@ -1,0 +1,47 @@
+{
+  "model_version": "v20261124162553",
+  "model_type": "GradientBoostingRegressor (recursive 7-day)",
+  "data_source": "yfinance",
+  "trained_at": "2026-11-24T16:25:53.197337+00:00",
+  "train_rows": 1796,
+  "last_date": "2026-11-24",
+  "validation_window": [
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
+    "2026-11-22",
+    "2026-11-23",
+    "2026-11-24"
+  ],
+  "validation_actual": [
+    62987.27,
+    61901.82,
+    58798.98,
+    60094.09,
+    61161.91,
+    61210.98,
+    59640.71
+  ],
+  "validation_predicted": [
+    64850.74,
+    64889.69,
+    64782.56,
+    64629.51,
+    64560.07,
+    64838.64,
+    64857.6
+  ],
+  "metrics": {
+    "mae": 3944.7221205764104,
+    "rmse": 4152.392328896164,
+    "mape": 6.534071842538365
+  },
+  "baseline_naive_metrics": {
+    "mae": 4065.9793526785716,
+    "rmse": 4273.91101396612,
+    "mape": 6.734372788853
+  },
+  "mape_threshold": 10.0,
+  "passed_threshold": true
+}

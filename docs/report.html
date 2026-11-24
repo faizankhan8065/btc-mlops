@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Assignment 3 — Production MLOps Pipeline for 7-Day Bitcoin Forecasting</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="report.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Assignment 3 — Production MLOps Pipeline for 7-Day
+Bitcoin Forecasting</h1>
+<p class="subtitle">Flask · Docker · GitHub Actions · Airflow · Kubeflow
+· Kubernetes</p>
+</header>
+<div class="authors">
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Student</strong></td>
+<td>Muhammad Faizan Khan — Roll No. <strong>26L-9004</strong> —
+<strong>PhD (Computer Science)</strong></td>
+</tr>
+<tr class="even">
+<td><strong>Group partner</strong></td>
+<td><em>[Name — Roll No.]</em></td>
+</tr>
+<tr class="odd">
+<td><strong>Course</strong></td>
+<td>MLOps — Assignment 3 (60 marks)</td>
+</tr>
+<tr class="even">
+<td><strong>GitHub repository</strong></td>
+<td><em>[https://github.com/&lt;user&gt;/btc-mlops]</em></td>
+</tr>
+<tr class="odd">
+<td><strong>Docker Hub images</strong></td>
+<td><em>[https://hub.docker.com/r/&lt;user&gt;/btc-forecast-api]</em></td>
+</tr>
+<tr class="even">
+<td><strong>Date</strong></td>
+<td>24 November 2026</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="system-architecture">1. System Architecture</h2>
+<div class="arch">
+<svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial" font-size="13">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334"/></marker></defs>
+<g stroke="#334" fill="none" stroke-width="1.4">
+<rect x="10" y="20" width="150" height="50" rx="6" fill="#eef4ff"/><rect x="10" y="110" width="150" height="50" rx="6" fill="#eef4ff"/><rect x="10" y="200" width="150" height="70" rx="6" fill="#f3f3f3"/>
+<rect x="220" y="15" width="300" height="160" rx="8" fill="#fff7e8"/>
+<rect x="220" y="200" width="300" height="70" rx="8" fill="#f0fff3"/>
+<rect x="580" y="15" width="310" height="255" rx="8" fill="#eefaff"/>
+</g> <text x="20" y="42">yfinance /
+CoinGecko</text><text x="20" y="60" font-size="11">daily BTC-USD
+OHLCV</text> <text x="20" y="132">GitHub (push /
+PR)</text><text x="20" y="150" font-size="11">GitHub Actions
+CI/CD</text> <text x="20" y="222">Docker
+Hub</text><text x="20" y="240" font-size="11">btc-forecast-api:&lt;sha&gt;</text><text x="20" y="256" font-size="11">btc-pipeline:&lt;sha&gt;</text>
+<text x="232" y="37" font-weight="bold">Apache Airflow DAG (daily) /
+Kubeflow KFP</text> <text x="232" y="62">fetch_data →
+preprocess_features →</text> <text x="232" y="82">train_and_evaluate →
+check_threshold →</text> <text x="232" y="102">reload_api_model (POST
+/reload)</text> <text x="232" y="130" font-size="11">Postgres metadata
+DB · KFP: ingest → features → train</text>
+<text x="232" y="150" font-size="11">Gate: register model only if 7-day
+MAPE ≤ threshold</text> <text x="232" y="222" font-weight="bold">Shared
+model store</text> <text x="232" y="242" font-size="11">PVC
+btc-models-pvc → /app/models (model.pkl, metrics.json)</text>
+<text x="590" y="37" font-weight="bold">Kubernetes (Minikube) —
+namespace btc-mlops</text> <text x="590" y="62">Ingress (nginx) host
+btc-forecast.local</text> <text x="590" y="84">Service ClusterIP
+:80→5000 · NodePort 30080</text> <text x="590" y="106">Deployment
+btc-api (3 replicas, Gunicorn)</text>
+<text x="600" y="126" font-size="11">liveness/readiness GET /health ·
+100m/128Mi → 500m/512Mi</text> <text x="590" y="150">HPA 2–8 pods @ 60%
+CPU (metrics-server)</text> <text x="590" y="174">ConfigMap
+(MODEL_STAGE, LOG_LEVEL, PORT)</text> <text x="590" y="196">Secret
+(API_KEY) → env vars</text> <text x="590" y="222">Endpoints: /health
+/predict /metrics /reload</text>
+<g stroke="#334" stroke-width="1.4" marker-end="url(#a)"><line x1="160" y1="45" x2="218" y2="60"/><line x1="160" y1="135" x2="85" y2="198"/><line x1="160" y1="235" x2="578" y2="250"/><line x1="370" y1="175" x2="370" y2="198"/><line x1="520" y1="235" x2="578" y2="200"/><line x1="520" y1="100" x2="578" y2="100"/></g>
+</svg>
+</div>
+<p><strong>Model.</strong> A scikit-learn
+<code>GradientBoostingRegressor</code> predicts the next-day log return
+from lagged returns (1, 2, 3, 5, 7, 14 days), MA7/MA30 price ratios and
+7/30-day volatility. The 7-day forecast is produced recursively. Feature
+code (<code>src/features.py</code>) is shared by training and serving to
+prevent training/serving skew, and a unit test checks there is no
+look-ahead leakage. Validation holds out the latest 7 days, computes
+MAE/RMSE/MAPE, and compares them against a naive “last close” baseline.
+The model is promoted atomically (temp file + rename) only if the MAPE
+is at or below the threshold.</p>
+<blockquote>
+<p><strong>Note on data used for the logs in this report.</strong> The
+build sandbox had no outbound access to Yahoo Finance or CoinGecko
+(proxy 403, shown in the logs). The ETL therefore fell back to its
+explicit <strong>synthetic</strong> mode
+(<code>ALLOW_SYNTHETIC=1</code>, a geometric random walk), and every
+artifact records <code>data_source: synthetic</code>. On a random walk
+no model can beat the naive baseline, which matches the result (MAPE
+9.58% vs 7.28% baseline). With internet access the identical code
+ingests real BTC-USD data; <em>[replace these numbers with the real-data
+run]</em>.</p>
+</blockquote>
+<h2 id="part-a-flask-rest-api-appapp.py">2. Part A — Flask REST API
+(<code>app/app.py</code>)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Endpoint</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>GET /health</code></td>
+<td>status, uptime, model version, stage, pod name (used by K8s
+probes)</td>
+</tr>
+<tr class="even">
+<td><code>POST /predict</code></td>
+<td><code>forecast_days</code> (1–30, default 7) and optional
+<code>history</code> (≥31 closes); returns dated predictions</td>
+</tr>
+<tr class="odd">
+<td><code>GET /metrics</code></td>
+<td>MAE / RMSE / MAPE and naive baseline from the latest validation
+run</td>
+</tr>
+<tr class="even">
+<td><code>POST /reload</code></td>
+<td>hot-reloads <code>model.pkl</code> from the PVC; protected by
+<code>X-API-Key</code> (K8s Secret)</td>
+</tr>
+</tbody>
+</table>
+<p>Validation and error handling: JSON content-type and body checks,
+type and range checks, JSON 400/401/404/405/500/503 responses, and a
+global exception handler. Gunicorn (<code>app/gunicorn.conf.py</code>,
+gthread workers) is the production WSGI server. Real output from the
+running container:</p>
+<pre class="text"><code>$ docker exec btc-api id
+uid=10001(app) gid=10001(app) groups=10001(app)
+$ curl -s localhost:5000/health
+{&quot;model_loaded&quot;:true,&quot;model_loaded_at&quot;:&quot;2026-11-24T14:15:37.349404+00:00&quot;,&quot;model_stage&quot;:&quot;production&quot;,&quot;model_version&quot;:&quot;v20261124141407&quot;,&quot;pod&quot;:&quot;d1401987bdea&quot;,&quot;status&quot;:&quot;ok&quot;,&quot;uptime_seconds&quot;:1266.68}
+$ curl -s -X POST localhost:5000/predict -H &#39;Content-Type: application/json&#39; -d &#39;{&quot;forecast_days&quot;: 7}&#39;
+{&quot;forecast_days&quot;:7,&quot;input&quot;:&quot;stored_history&quot;,&quot;last_observed_close&quot;:39472.55,&quot;model_version&quot;:&quot;v20261124141407&quot;,&quot;predictions&quot;:[{&quot;date&quot;:&quot;2026-11-25&quot;,&quot;predicted_close&quot;:39197.75},
+  {&quot;date&quot;:&quot;2026-11-26&quot;,&quot;predicted_close&quot;:39531.75},
+  {&quot;date&quot;:&quot;2026-11-27&quot;,&quot;predicted_close&quot;:39513.82},
+  {&quot;date&quot;:&quot;2026-11-28&quot;,&quot;predicted_close&quot;:39746.41},
+  {&quot;date&quot;:&quot;2026-11-29&quot;,&quot;predicted_close&quot;:39737.08},
+  {&quot;date&quot;:&quot;2026-11-30&quot;,&quot;predicted_close&quot;:39870.84},
+  {&quot;date&quot;:&quot;2026-12-01&quot;,&quot;predicted_close&quot;:40429.66}],&quot;status&quot;:&quot;ok&quot;}
+$ curl -s localhost:5000/metrics
+{&quot;model_version&quot;: &quot;v20261124141407&quot;, &quot;metrics&quot;: {&quot;mae&quot;: 3890.726582988192, &quot;mape&quot;: 9.578856674073526, &quot;rmse&quot;: 4219.982474890972}, &quot;baseline_naive_metrics&quot;: {&quot;mae&quot;: 2959.303876941211, &quot;mape&quot;: 7.277346430868679, &quot;rmse&quot;: 3143.14037335182}, &quot;data_source&quot;: &quot;synthetic&quot;}
+$ curl ... -d &#39;{&quot;forecast_days&quot;: 0}&#39;     -&gt; {&quot;code&quot;:400,&quot;message&quot;:&quot;forecast_days must be an integer between 1 and 30&quot;,&quot;status&quot;:&quot;error&quot;}
+ HTTP 400
+$ curl ... -d &#39;{bad json&#39;                -&gt; {&quot;code&quot;:400,&quot;message&quot;:&quot;request body is not valid JSON&quot;,&quot;status&quot;:&quot;error&quot;}
+ HTTP 400
+$ curl ... -d &#39;{&quot;history&quot;: [1,2,3]}&#39;    -&gt; {&quot;code&quot;:400,&quot;message&quot;:&quot;history must be a list of at least 31 closing prices&quot;,&quot;status&quot;:&quot;error&quot;}
+ HTTP 400
+$ curl -X POST /reload (no key)          -&gt; {&quot;code&quot;:401,&quot;message&quot;:&quot;invalid or missing X-API-Key&quot;,&quot;status&quot;:&quot;error&quot;}
+ HTTP 401
+$ curl -X POST /reload -H &#39;X-API-Key: …&#39; -&gt; {&quot;model_version&quot;:&quot;v20261124143510&quot;,&quot;status&quot;:&quot;reloaded&quot;}
+ HTTP 200</code></pre>
+<p><strong>pytest</strong> (14 tests: endpoints, validation, malformed
+JSON, auth, 404/405, metric maths, leakage check):</p>
+<pre class="text"><code>tests/test_api.py::test_health PASSED                                    [  7%]
+tests/test_api.py::test_predict_default_7_days PASSED                    [ 14%]
+tests/test_api.py::test_predict_no_body PASSED                           [ 21%]
+tests/test_api.py::test_predict_custom_days_and_history PASSED           [ 28%]
+tests/test_api.py::test_predict_invalid_days PASSED                      [ 35%]
+tests/test_api.py::test_predict_invalid_history PASSED                   [ 42%]
+tests/test_api.py::test_predict_malformed_json PASSED                    [ 50%]
+tests/test_api.py::test_metrics PASSED                                   [ 57%]
+tests/test_api.py::test_reload_requires_key PASSED                       [ 64%]
+tests/test_api.py::test_unknown_endpoint_and_method PASSED               [ 71%]
+tests/test_pipeline.py::test_features_have_no_lookahead PASSED           [ 78%]
+tests/test_pipeline.py::test_metrics_values PASSED                       [ 85%]
+tests/test_pipeline.py::test_training_artifacts PASSED                   [ 92%]
+tests/test_pipeline.py::test_recursive_forecast_rejects_short_history PASSED [100%]
+============================== 14 passed in 1.38s ==============================</code></pre>
+<h2 id="part-b-containerization-cicd">3. Part B — Containerization &amp;
+CI/CD</h2>
+<p><strong>Multi-stage Dockerfile</strong>
+(<code>app/Dockerfile</code>): the builder stage compiles wheels and the
+runtime stage installs from those wheels only. It uses
+<code>python:3.10-slim</code>, runs as non-root UID 10001 (verified:
+<code>uid=10001(app)</code>), has a <code>HEALTHCHECK</code>, and orders
+layers so that requirements are cached before code.
+<code>.dockerignore</code> excludes data, tests and docs. A second image
+(<code>Dockerfile.pipeline</code>) runs the ETL and training steps for
+Airflow and Kubeflow.</p>
+<pre class="text"><code>#10 [builder 4/4] RUN --mount=type=secret,id=ca,required=false if [ -f /run/secrets/ca ]; then export PIP_CERT=/run/secrets/ca; fi; pip wheel --wheel-
+#14 [builder 2/4] WORKDIR /build
+#7 [builder 1/4] FROM docker.io/library/python:3.10-slim@sha256:6ff506466f8b1e981719b468cc0023b8ef000b983cdec0eafe119d01f379e31d
+#9 [builder 3/4] COPY app/requirements.txt .
+#11 [runtime 3/7] COPY --from=builder /wheels /wheels
+#12 [runtime 4/7] RUN pip install --no-index --find-links=/wheels /wheels/* &amp;&amp; rm -rf /wheels &amp;&amp; groupadd --system --gid 10001 app &amp;&amp; useradd --system
+#13 [runtime 2/7] WORKDIR /app
+#15 [runtime 6/7] COPY --chown=app:app app/app.py app/gunicorn.conf.py ./
+#16 [runtime 7/7] COPY --chown=app:app models/ ./models/
+#8 [runtime 5/7] COPY --chown=app:app src/__init__.py src/features.py ./src/
+#17 naming to docker.io/library/btc-forecast-api:latest done
+$ docker images
+btc-forecast-api:latest  812MB
+btc-pipeline:latest  665MB
+python:3.10-slim  186MB</code></pre>
+<p><strong>docker-compose.yml</strong> starts Postgres, airflow-init,
+the Airflow webserver and scheduler, and the Flask API. A shared
+<code>models</code> volume lets the DAG’s retrained model be
+hot-reloaded by the API.</p>
+<p><strong>GitHub Actions</strong>
+(<code>.github/workflows/ci_cd.yml</code>) runs on every push or PR to
+<code>main</code>. Job <code>lint-test</code> runs flake8,
+<code>black --check</code> and pytest, compiles the KFP pipeline, and
+uploads the JUnit report. Job <code>build-push</code> runs only on push
+to main after tests pass. It logs in with
+<code>secrets.DOCKER_USERNAME</code> /
+<code>secrets.DOCKER_PASSWORD</code>, then builds and pushes both images
+tagged with <code>${{ github.sha }}</code> and <code>latest</code>,
+using a GHA layer cache. Local lint results:</p>
+<pre class="text"><code>$ flake8 app src tests dags kubeflow
+flake8: 0 issues
+$ black --check app src tests kubeflow dags
+All done! ✨ 🍰 ✨
+13 files would be left unchanged.</code></pre>
+<p><em>[Screenshot: GitHub Actions run — both jobs green]</em>  
+<em>[Screenshot: Docker Hub tags sha + latest]</em></p>
+<h2 id="part-c-airflow-etl-dag-kubeflow-pipeline">4. Part C — Airflow
+ETL DAG &amp; Kubeflow Pipeline</h2>
+<p><code>dags/btc_etl_pipeline.py</code> is scheduled
+<code>@daily</code> with <code>catchup=False</code>,
+<code>max_active_runs=1</code> and 2 retries. Its tasks are
+<strong>fetch_data</strong> (yfinance → CoinGecko fallback),
+<strong>preprocess_features</strong> (cleaning, daily reindex, MA7/MA30,
+volatility), <strong>train_and_evaluate</strong> (7-day hold-out metrics
+pushed to XCom), <strong>check_threshold</strong>
+(<code>ShortCircuitOperator</code>, which skips the reload when the
+model is rejected) and <strong>reload_api_model</strong> (POST
+<code>/reload</code>, then checks that the served version equals the new
+version and logs a fresh forecast). Real manual execution
+(<code>airflow dags test</code>, Airflow 2.9.3) against the running API
+container:</p>
+<pre class="text"><code>$ airflow dags list
+dag_id           | fileloc                               | owners | is_paused
+=================+=======================================+========+==========
+btc_etl_pipeline | /opt/airflow/dags/btc_etl_pipeline.py | mlops  | None     
+                                                                             
+
+$ airflow tasks list btc_etl_pipeline --tree
+&lt;Task(PythonOperator): fetch_data&gt;
+    &lt;Task(PythonOperator): preprocess_features&gt;
+        &lt;Task(PythonOperator): train_and_evaluate&gt;
+            &lt;Task(ShortCircuitOperator): check_threshold&gt;
+                &lt;Task(PythonOperator): reload_api_model&gt;
+Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=fetch_data
+Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=preprocess_features
+Model v20261124143510 REGISTERED (MAPE 9.58% &lt;= 10.00%)
+Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=train_and_evaluate
+Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=check_threshold
+API now serving v20261124143510 (expected v20261124143510)
+Marking task as SUCCESS. dag_id=btc_etl_pipeline, task_id=reload_api_model
+DagRun Finished: dag_id=btc_etl_pipeline, execution_date=2026-11-24 00:00:00+00:00</code></pre>
+<p>After the run, <code>/health</code> on the API reported the new
+version, <code>v20261124143510</code> (the old one was
+<code>v20261124141407</code>). This confirms the end-to-end update with
+no restart. <em>[Screenshot: Airflow UI Graph view of btc_etl_pipeline,
+all tasks green]</em></p>
+<p><strong>Kubeflow</strong> (<code>kubeflow/btc_kfp_pipeline.py</code>,
+KFP v2 SDK) defines three <code>@dsl.container_component</code>s,
+<code>ingest_data → build_features → train_model</code>, which run the
+<code>btc-pipeline</code> image. Data and model are passed as typed
+<code>Dataset</code>/<code>Model</code>/<code>Metrics</code> artifacts
+so KFP tracks lineage. The pipeline compiles to
+<code>kubeflow/btc_kfp_pipeline.yaml</code> (this step also runs in CI)
+and can be uploaded to the KFP UI with a recurring run.</p>
+<h2 id="part-d-kubernetes-deployment-scaling">5. Part D — Kubernetes
+Deployment &amp; Scaling</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Manifest</th>
+<th>Key settings</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>configmap-secret.yaml</code></td>
+<td>ConfigMap: MODEL_STAGE, LOG_LEVEL, PORT, MODEL_DIR; Secret: API_KEY
+(via <code>envFrom</code>)</td>
+</tr>
+<tr class="even">
+<td><code>pvc.yaml</code></td>
+<td>1 Gi RWO PVC mounted at <code>/app/models</code>; an initContainer
+seeds it from the image on first start</td>
+</tr>
+<tr class="odd">
+<td><code>deployment.yaml</code></td>
+<td>3 replicas, RollingUpdate; liveness <code>/health</code>
+(initialDelay 15 s, period 10 s); readiness <code>/health</code>;
+requests 100m/128Mi, limits 500m/512Mi; runAsNonRoot, drop ALL
+capabilities</td>
+</tr>
+<tr class="even">
+<td><code>service.yaml</code></td>
+<td>ClusterIP 80→5000 and NodePort 30080 (80→5000)</td>
+</tr>
+<tr class="odd">
+<td><code>hpa.yaml</code></td>
+<td>autoscaling/v2, min 2 / max 8, CPU 60% (plus memory 80%), fast
+scale-up, 60 s scale-down window</td>
+</tr>
+<tr class="even">
+<td><code>ingress.yaml</code></td>
+<td>ingressClassName nginx, host <code>btc-forecast.local</code> →
+btc-api:80</td>
+</tr>
+</tbody>
+</table>
+<p><code>scripts_run_k8s_demo.sh</code> automates the full Minikube run
+and saves every output to <code>docs/logs/k8s/</code>. It starts
+Minikube with the metrics-server and ingress addons, builds the image
+inside Minikube, applies the manifests, runs
+<code>kubectl get pods/svc/hpa/ingress/pvc</code>, sends API calls
+through the NodePort and the Ingress, performs a pod-deletion chaos
+test, and runs an in-cluster load generator while recording
+<code>kubectl get hpa --watch</code>.</p>
+<p><em>[Paste: kubectl get pods,svc,hpa,ingress,pvc —
+docs/logs/k8s/03_get_all.log]</em> <em>[Screenshot: kubectl get hpa
+–watch showing replicas 2 → N under load, then scale-down]</em></p>
+<p><strong>Load-test baseline (single container, 2 Gunicorn workers × 2
+threads)</strong>, measured with <code>loadtest/quick_bench.py</code>.
+Locust users can run <code>loadtest/locustfile.py</code> instead:</p>
+<pre class="text"><code>url=http://localhost:5000/predict concurrency=1 duration=15.0s
+requests=698 errors=0 throughput=46.5 req/s
+latency ms: mean=21.5 p50=20.4 p95=28.1 p99=36.9
+
+url=http://localhost:5000/predict concurrency=4 duration=15.0s
+requests=1046 errors=0 throughput=69.7 req/s
+latency ms: mean=57.4 p50=58.3 p95=113.3 p99=133.1
+
+url=http://localhost:5000/predict concurrency=8 duration=15.0s
+requests=956 errors=0 throughput=63.7 req/s
+latency ms: mean=126.0 p50=127.2 p95=222.7 p99=250.7</code></pre>
+<p>Throughput saturates at about 65–70 req/s per pod once concurrency
+reaches 4, and latency then grows linearly. This is the CPU-bound regime
+in which the HPA’s 60% CPU target adds pods. With a 500m CPU limit per
+pod the saturation point is lower, so scale-out triggers early.</p>
+<h2 id="part-e-verification-resilience">6. Part E — Verification &amp;
+Resilience</h2>
+<ul>
+<li><strong>E1 Self-healing:</strong> <code>kubectl delete pod</code> on
+one replica makes the ReplicaSet create a replacement immediately. The
+new pod passes its readiness probe before it receives traffic, while the
+Service keeps routing to the 2 healthy pods, so there is no downtime.
+<em>[Paste docs/logs/k8s/05_self_healing.log]</em></li>
+<li><strong>E2 End-to-end:</strong> the Airflow manual run (Section 4)
+retrained and registered a new model and hot-reloaded the API. The CI
+workflow tests, builds and pushes the images. <em>[GitHub Actions
+screenshot; curl to the K8s NodePort/Ingress returning the 7-day
+forecast]</em></li>
+<li><strong>Bugs found during verification and fixed:</strong> (1) a
+model pickled with a newer scikit-learn/NumPy failed to load in the
+pinned image. Training now runs in the pinned <code>btc-pipeline</code>
+image and in CI. (2) <code>shutil.copy</code> failed on a shared volume
+(EPERM on chmod). It was replaced by an atomic <code>copyfile</code> +
+<code>os.replace</code>, which also stops the API from reading a
+half-written model.</li>
+</ul>
+<h2 id="conclusion">7. Conclusion</h2>
+<p>The system automates the full lifecycle: ingestion → features →
+retraining with a quality gate → zero-downtime model hot-reload. It is
+containerized, CI-tested, and deployed on Kubernetes with probes,
+autoscaling, persistent model storage and externalized configuration.
+Future work: an LSTM or Prophet model compared against the GBM, MLflow
+model registry, Prometheus/Grafana monitoring, and drift detection that
+triggers retraining.</p>
+</body>
+</html>

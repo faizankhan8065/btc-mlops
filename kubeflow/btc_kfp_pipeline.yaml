@@ -1,0 +1,155 @@
+# PIPELINE DEFINITION
+# Name: btc-7day-forecast
+# Description: BTC-USD ingestion, feature engineering and training
+# Inputs:
+#    allow_synthetic: str [Default: '0']
+#    mape_threshold: float [Default: 10.0]
+components:
+  comp-build-features:
+    executorLabel: exec-build-features
+    inputDefinitions:
+      artifacts:
+        raw_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        features:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-ingest-data:
+    executorLabel: exec-ingest-data
+    inputDefinitions:
+      parameters:
+        allow_synthetic:
+          defaultValue: '0'
+          isOptional: true
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        raw_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-train-model:
+    executorLabel: exec-train-model
+    inputDefinitions:
+      artifacts:
+        features:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        mape_threshold:
+          parameterType: NUMBER_DOUBLE
+    outputDefinitions:
+      artifacts:
+        metrics:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-build-features:
+      container:
+        args:
+        - --raw
+        - '{{$.inputs.artifacts[''raw_data''].path}}'
+        - --out
+        - '{{$.outputs.artifacts[''features''].path}}'
+        command:
+        - python
+        - -m
+        - src.preprocess
+        image: docker.io/YOUR_DOCKERHUB_USER/btc-pipeline:latest
+    exec-ingest-data:
+      container:
+        args:
+        - ALLOW_SYNTHETIC="$1" RAW_DATA_PATH="$0" python -m src.etl_fetch --out "$0"
+        - '{{$.outputs.artifacts[''raw_data''].path}}'
+        - '{{$.inputs.parameters[''allow_synthetic'']}}'
+        command:
+        - sh
+        - -c
+        image: docker.io/YOUR_DOCKERHUB_USER/btc-pipeline:latest
+    exec-train-model:
+      container:
+        args:
+        - python -m src.train_forecast --processed "$0" --model-dir "$1" --mape-threshold
+          "$3" && cp "$1/candidate_metrics.json" "$2"
+        - '{{$.inputs.artifacts[''features''].path}}'
+        - '{{$.outputs.artifacts[''model''].path}}'
+        - '{{$.outputs.artifacts[''metrics''].path}}'
+        - '{{$.inputs.parameters[''mape_threshold'']}}'
+        command:
+        - sh
+        - -c
+        image: docker.io/YOUR_DOCKERHUB_USER/btc-pipeline:latest
+pipelineInfo:
+  description: BTC-USD ingestion, feature engineering and training
+  name: btc-7day-forecast
+root:
+  dag:
+    tasks:
+      build-features:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-build-features
+        dependentTasks:
+        - ingest-data
+        inputs:
+          artifacts:
+            raw_data:
+              taskOutputArtifact:
+                outputArtifactKey: raw_data
+                producerTask: ingest-data
+        taskInfo:
+          name: build-features
+      ingest-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-ingest-data
+        inputs:
+          parameters:
+            allow_synthetic:
+              componentInputParameter: allow_synthetic
+        taskInfo:
+          name: ingest-data
+      train-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model
+        dependentTasks:
+        - build-features
+        inputs:
+          artifacts:
+            features:
+              taskOutputArtifact:
+                outputArtifactKey: features
+                producerTask: build-features
+          parameters:
+            mape_threshold:
+              componentInputParameter: mape_threshold
+        taskInfo:
+          name: train-model
+  inputDefinitions:
+    parameters:
+      allow_synthetic:
+        defaultValue: '0'
+        isOptional: true
+        parameterType: STRING
+      mape_threshold:
+        defaultValue: 10.0
+        isOptional: true
+        parameterType: NUMBER_DOUBLE
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.18.2

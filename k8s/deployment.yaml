@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: btc-api
+  namespace: btc-mlops
+  labels:
+    app: btc-api
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: btc-api
+  template:
+    metadata:
+      labels:
+        app: btc-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      initContainers:
+        # Seed the PVC with the model bundled in the image on first start;
+        # afterwards the pipeline overwrites /app/models/model.pkl.
+        - name: seed-model
+          image: btc-forecast-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "[ -f /pvc/model.pkl ] || cp /app/models/* /pvc/; ls -l /pvc"]
+          volumeMounts:
+            - name: models
+              mountPath: /pvc
+      containers:
+        - name: btc-api
+          image: btc-forecast-api:latest   # CI pushes <DOCKER_USERNAME>/btc-forecast-api:<sha>
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: btc-api-config
+            - secretRef:
+                name: btc-api-secret
+          volumeMounts:
+            - name: models
+              mountPath: /app/models
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: btc-models-pvc
